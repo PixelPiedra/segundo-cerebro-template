@@ -1,6 +1,9 @@
 <%*
-const view = app.workspace.activeLeaf?.view;
-if (!view || view.getViewType() !== "markdown") { new Notice("❌ No hay editor activo"); return; }
+let view = app.workspace.activeLeaf?.view;
+if (!view || view.getViewType() !== "markdown") {
+    view = app.workspace.getLeavesOfType("markdown")?.[0]?.view;
+}
+if (!view) { new Notice("❌ No hay editor activo"); return; }
 const editor = view.editor;
 const lineCount = editor.lineCount();
 

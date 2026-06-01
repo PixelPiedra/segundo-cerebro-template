@@ -1,3 +1,15 @@
+# ⚙️ Configuración de Botones
+
+Este vault usa **dos plugins de botones** con roles separados:
+
+| Plugin | Sintaxis | Rol |
+|--------|----------|-----|
+| **Meta Bind** | `` `BUTTON[btn-xxx]` `` | Acciones que ejecutan scripts (agregar tiempo, toggle, crear sub-tarea, etc.) |
+| **Buttons** | `` `button-xxx` `` | Creación de notas (Nueva Área, Tarea, Zettel, etc.) y comandos (Daily Note, Review) |
+
+**Regla**: si el ID empieza con `btn-` lo maneja Meta Bind; si empieza con `button-` lo maneja Buttons.
+
+---
 
 ```button
 name ➕ Nueva Área
@@ -25,7 +37,7 @@ templater true
 
 ```button
 name ➕ Nueva Contexto
-type note(20_Projects/<% (window._origenNota = app.workspace.getActiveFile()?.basename, tp.frontmatter.project ) %> - <% tp.system.prompt("¿Qué contexto es este?") %>) template
+type note(20_Projects/<%* window._origenNota = app.workspace.getActiveFile()?.basename; const project = tp.frontmatter.project; const name = await tp.system.prompt("¿Qué contexto es este?"); %><% name ? (project + " - " + name) : ":" %>) template
 action T_Create_Context
 templater true
 ```
@@ -40,16 +52,24 @@ templater true
 ^button-create-zettel
 
 ```button
+name 📝 Crear Publicación (Express)
+type note(10_Library/<% (window._origenNota = app.workspace.getActiveFile()?.basename, "Express - " + tp.system.prompt("Título de la publicación") ) %>) template
+action T_Create_Express
+templater true
+```
+^button-create-express
+
+```button
 name 🗑️ Eliminar la nota actual
 type command
-action Eliminar archivo actual
+action Delete current file
 class obsidian-button
 color red
 ```
 ^button-delete-note
 
 ```button
-name 💡 Create MOC
+name 💡 Crear MOC
 type note(10_Library/MOC_<%* window._origenNota = app.workspace.getActiveFile()?.basename; const ZF="10_Library"; const flat=(v)=>[].concat(v||[]); const files=app.metadataCache.getCachedFiles().filter(f=>f.startsWith(ZF)); const mocs=new Set(); const topics=new Set(); files.forEach(f=>{const m=app.metadataCache.getCache(f)?.frontmatter; if(m){const ts=flat(m.tag).concat(flat(m.tags)); const tps=flat(m.topic); if(ts.some(t=>t&&t.includes("type/topic"))) tps.forEach(t=>mocs.add(t)); tps.forEach(t=>topics.add(t));}}); const list=Array.from(topics).filter(t=>!mocs.has(t)).sort(); let res=app.workspace.activeEditor?.editor.getSelection()||(await tp.system.suggester(t=>t,list)); if(res) tR+=res; %>) template
 action T_MOC_Topic
 templater true
@@ -81,22 +101,6 @@ templater true
 ^button-new-task-serfe
 
 ```button
-name 🛠️ Crear Sub Tarea
-type note(20_Projects/<% (window._origenNota = app.workspace.getActiveFile()?.basename, tp.frontmatter.project) %> - <% (await tp.system.prompt("Título de la Tarea")).replace(/[\\/:*?"<>|#^\[\]]/g, "").replace(/\(/g, "{").replace(/\)/g, "}").replace(/\s+/g, " ").trim() %> ) template
-action T_Create_Sub_Task
-templater true
-```
-^button-new-sub-task
-
-```button
-name ➕ Agregar Detalle
-type note(20_Projects/<% (window._origenNota = app.workspace.getActiveFile()?.basename, tp.frontmatter.project ) %><% tp.frontmatter.ticket_id ? (" - " + (tp.frontmatter.ticket_id.includes("/") ? tp.file.title.split(" - ")[1] : tp.frontmatter.ticket_id)) : "" %> - <% ( await tp.system.prompt("¿De qué trata esta nota?")).replace(/[\\/:*?"<>|#^\[\]]/g, "").replace(/\(/g, "{").replace(/\)/g, "}").replace(/\s+/g, " ").trim() %>) template
-action T_Create_Detail
-templater true
-```
-^button-add-detail
-
-```button
 name ⏳ Nuevo Registro
 type note(00_Inbox/<% (window._origenNota = app.workspace.getActiveFile()?.basename, tp.date.now("YYYY-MM-DD") ) %>_Routine) template
 action T_Create_Routine_Log
@@ -107,7 +111,23 @@ templater true
 ```button
 name ➕ Traducir Clipboard
 type append template
-action Scripts/T_Traductor_a_Tracker
+action 80_Templates/Scripts/T_Traductor_a_Tracker
 templater true
 ```
 ^button-traducir-tracker
+
+```button
+name 📅 Nota del Día
+type command
+action Periodic Notes: Open daily note
+color blue
+```
+^button-daily-note
+
+```button
+name 📋 Review Semanal
+type command
+action Periodic Notes: Open weekly note
+color green
+```
+^button-weekly-review

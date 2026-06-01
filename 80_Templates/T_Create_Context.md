@@ -13,7 +13,7 @@ context: <% tp.file.title.split(" - ").pop() %>
 
 ---
 ## Detalles 
-`button-add-detail`
+`BUTTON[btn-add-detail]`
 ```dataview
 LIST WITHOUT ID
 	link(file.link, detail)

@@ -1,11 +1,20 @@
 ---
 created: <% tp.date.now("YYYY-MM-DD HH:mm") %>
+status: Activo
 tags:
   - type/area
 area: <% tp.file.title.replace("MOC_", "").toLowerCase() %>
 <% tp.file.include("[[script_detectar_origen]]") %>
 ---
 # <% tp.file.title.replace("MOC_","") %>
+> [!ABSTRACT] 🧭 Panel de Control
+> **Estado**: `INPUT[inlineSelect(option(Activo), option(Pausado), option(Futuro), option(Completado), option(Archivado)):status]`
+
+> [!QUOTE] 📝 Mis Notas
+> _Escribí acá por qué esta área existe, qué la define, qué prioridades tiene, y qué notas/conceptos son más relevantes. Esto es lo que **vos** sabés de esta área — lo que la máquina no puede inferir._
+> 
+> Por ejemplo: "Esta área nace de la necesidad de..."
+
 ```dataviewjs
 const area = dv.current().area; // Lee el atributo 'area' del YAML de esta nota
 
@@ -23,7 +32,7 @@ dv.paragraph("```todoist\n" +
 LIST WITHOUT ID
 	link(file.link, upper(project))
 FROM "20_Projects" AND #type/project
-WHERE origin = this.file.link
+WHERE origin = this.file.link AND status != "Archivado"
 ```
 ---
 ##  🏔️ Áreas
@@ -32,7 +41,7 @@ WHERE origin = this.file.link
 LIST WITHOUT ID
 	link(file.link, upper(area))
 FROM "25_Areas" AND #type/area
-WHERE origin = this.file.link
+WHERE origin = this.file.link AND status != "Archivado"
 ```
 ---
 # Notas
@@ -40,7 +49,7 @@ WHERE origin = this.file.link
 ```dataview
 LIST
 FROM "00_Inbox"
-WHERE origin = this.file.link
+WHERE origin = this.file.link AND status != "Archivado"
 ```
 
 `button-delete-note`

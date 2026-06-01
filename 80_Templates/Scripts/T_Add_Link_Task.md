@@ -25,7 +25,7 @@ if (tareasCandidatas.length === 0) {
     return;
 }
 
-// 4. Preparar el menú (Suggester)
+// 4. Preparar el menú (Selector)
 const nombresTareas = tareasCandidatas.map(p => p.file.name).values;
 const linksTareas = tareasCandidatas.map(p => p.file.link).values;
 

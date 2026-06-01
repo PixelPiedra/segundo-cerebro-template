@@ -8,8 +8,8 @@ const ticketId = idMatch ? idMatch[1] : "S/N";
 tR += `ticket_id: "${ticketId}"`;
 %>
 created: <% tp.date.now("YYYY-MM-DD HH:mm") %>
-status: New
-priority: Medium
+status: Nuevo
+priority: Media
 project: <% rawInput.split(" - ")[0] %>
 related_tasks: []
 tags: 
@@ -23,8 +23,8 @@ est_P: 0
 # 🛠️ Ticket: `<% rawInput.split(" - ").pop() %>`
 > [!ABSTRACT] 🧭 Panel de Control
 > **Ticket:** [<% ticketId %>](https://tracker.serfe.com/view.php?id=<% ticketId %>)
-> **Prioridad**: `INPUT[inlineSelect(option(High), option(Medium), option(Low)):priority]`
-> **Estado Actual**: `INPUT[inlineSelect(option(New), option(Assigned), option(Feedback), option(Testing), option(Resolved), option(Closed)):status]`
+> **Prioridad**: `INPUT[inlineSelect(option(Alta), option(Media), option(Baja)):priority]`
+> **Estado Actual**: `INPUT[inlineSelect(option(Nuevo), option(Asignado), option(Revisión), option(Pruebas), option(Resuelto), option(Cerrado), option(Archivado)):status]`
 ## 🔗 Tareas Relacionadas
 `BUTTON[btn-link-task]`
 ```dataview
@@ -36,55 +36,33 @@ est_P: 0
 
 ## Tiempo
 ```dataviewjs
-const content = await dv.io.load(dv.current().file.path);
-// Eliminar bloques de código (``` ... ```) y código inline (` ... `)
-const contentLimpio = content
-    .replace(/```[\s\S]*?```/g, "")  // bloques multilinea
-    .replace(/`[^`]*`/g, "");         // inline
-const curr    = dv.current();
+await dv.view("80_Templates/Scripts/planificar_tareas_helper", {});
+const H = window._ptHelpers;
 
-// 1. Parsear Plan de Desarrollo
+const content = await dv.io.load(dv.current().file.path);
+const contentLimpio = content.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
+const curr = dv.current();
+
 const tableRegex = /### Plan de Desarrollo[\s\S]*?(\|.*\|[\s\S]*?)(?=##|$)/;
 const match = contentLimpio.match(tableRegex);
-
-const toMins = (t) => {
-    if (!t) return 0;
-    const cleanT = t.replace(/[^\d:]/g, "");
-    const parts = cleanT.split(":");
-    return parts.length === 2 ? (parseInt(parts[0]) * 60) + parseInt(parts[1]) : 0;
-};
-
-const toTimeStr = (m) => {
-    const h = Math.floor(m / 60).toString().padStart(2, '0');
-    const mins = (m % 60).toString().padStart(2, '0');
-    return `${h}:${mins}`;
-};
-
 const toDecimal = (mins) => Math.round(mins / 60 * 100) / 100;
 
 let totalMins = 0;
-
 if (match) {
-    let lines = match[1].split("\n")
-        .map(l => l.trim())
-        .filter(l => l.includes("|") && !l.includes("---"));
-
+    let lines = match[1].split("\n").map(l => l.trim()).filter(l => l.includes("|") && !l.includes("---"));
     if (lines.length > 0) lines.shift();
-
     for (let line of lines) {
         let cols = line.split("|").map(c => c.trim()).filter(c => c !== "");
-        if (cols.length >= 3) totalMins += toMins(cols[2]);
+        if (cols.length >= 3) totalMins += H.toMins(cols[2]);
     }
 }
 
-// 2. Calcular EE y E
 const riesgo  = curr.riesgo ?? 30;
 const EE_mins = totalMins;
 const E_mins  = Math.round(EE_mins * (1 + riesgo / 100));
 const EE_dec  = toDecimal(EE_mins);
 const E_dec   = toDecimal(E_mins);
 
-// 3. Escribir al YAML solo si cambió
 if (curr.est_EE !== EE_dec || curr.est_E !== E_dec) {
     const file = app.vault.getAbstractFileByPath(curr.file.path);
     let fc = await app.vault.read(file);
@@ -93,8 +71,7 @@ if (curr.est_EE !== EE_dec || curr.est_E !== E_dec) {
     await app.vault.modify(file, fc);
 }
 
-// 4. Mostrar en el panel
-dv.span(`**E: ${toTimeStr(E_mins)} hs** (EE: ${toTimeStr(EE_mins)} hs · riesgo: ${riesgo}%)`);
+dv.span(`**E: ${H.toStr(E_mins)} hs** (EE: ${H.toStr(EE_mins)} hs · riesgo: ${riesgo}%)`);
 ```
 
 ---
@@ -121,7 +98,7 @@ dv.span(`**E: ${toTimeStr(E_mins)} hs** (EE: ${toTimeStr(EE_mins)} hs · riesgo:
 | :-- | :------------- | :--------- | ----- | --------- | --- | --- | --- |
 `BUTTON[btn-add-task-module]`
 #### Sub Tareas
-`button-new-sub-task`
+`BUTTON[btn-create-sub-task]`
 ```dataview
 LIST WITHOUT ID
 	link(file.link, upper(detail))
@@ -131,80 +108,41 @@ WHERE origin = this.file.link
 
 ### 📝 Nota para el Tracker
 ```dataviewjs
-// 1. Cargar contenido y configurar regex
+await dv.view("80_Templates/Scripts/planificar_tareas_helper", {});
+const H = window._ptHelpers;
+const toTimeStr = (m) => H.toStr(m) + " hs";
+
 const content = await dv.io.load(dv.current().file.path);
-const contentLimpio = content
-    .replace(/```[\s\S]*?```/g, "")  // bloques multilinea
-    .replace(/`[^`]*`/g, "");         // inline
+const contentLimpio = content.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
 const tableRegex = /### Plan de Desarrollo[\s\S]*?(\|.*\|[\s\S]*?)(?=##|$)/;
 const match = contentLimpio.match(tableRegex);
 
-// Variables para almacenamiento
 let datosTabla = [];
 let totalMins = 0;
-let maxLongitudNombre = 15; // Mínimo 15 chars para que quepa "TOTAL ESTIMADO"
-
-// Helpers de tiempo
-const toMins = (t) => {
-    if (!t) return 0;
-    const cleanT = t.replace(/[^\d:]/g, ""); 
-    const parts = cleanT.split(":");
-    return parts.length === 2 ? (parseInt(parts[0]) * 60) + parseInt(parts[1]) : 0;
-};
-
-const toTimeStr = (m) => {
-    const h = Math.floor(m / 60).toString().padStart(2, '0');
-    const mins = (m % 60).toString().padStart(2, '0');
-    return `${h}:${mins} hs`;
-};
+let maxLongitudNombre = 15;
 
 if (match) {
-    // PASO 1 y 2: Limpieza de líneas
-    let lines = match[1].split("\n")
-        .map(l => l.trim())
-        .filter(l => l.includes("|") && !l.includes("---"));
-
-    // PASO 3: Quitar header
+    let lines = match[1].split("\n").map(l => l.trim()).filter(l => l.includes("|") && !l.includes("---"));
     if (lines.length > 0) lines.shift();
-
-    // PASO 4: Procesar datos y calcular longitudes
     for (let line of lines) {
         let cols = line.split("|").map(c => c.trim()).filter(c => c !== "");
-        
         if (cols.length >= 2) {
             const item = cols[1];
             const tiempoStr = cols[2];
-            
-            // Calculamos el largo de este item. Si es el más largo hasta ahora, lo guardamos.
-            if (item.length > maxLongitudNombre) {
-                maxLongitudNombre = item.length;
-            }
-
-            totalMins += toMins(tiempoStr);
-            
-            // Guardamos el objeto para pintarlo luego
-            datosTabla.push({ 
-                item: item, 
-                tiempo: tiempoStr.replace("hs", "").trim() + " hs" 
-            });
+            if (item.length > maxLongitudNombre) maxLongitudNombre = item.length;
+            totalMins += H.toMins(tiempoStr);
+            datosTabla.push({ item, tiempo: tiempoStr.replace("hs", "").trim() + " hs" });
         }
     }
 }
 
-// Configuración dinámica del ancho
-// Le sumamos 2 espacios extra para que no quede pegado a la línea vertical
 const anchoColumna = maxLongitudNombre + 2;
 let filasHTML = "";
-
-// Generamos las filas usando el ancho calculado
-for (let fila of datosTabla) {
-    filasHTML += `${fila.item.padEnd(anchoColumna)} | ${fila.tiempo}\n`;
-}
+for (let fila of datosTabla) filasHTML += `${fila.item.padEnd(anchoColumna)} | ${fila.tiempo}\n`;
 
 const riesgo = dv.current().riesgo ?? 30;
 const totalConRiesgo = Math.round(totalMins * (1 + riesgo / 100));
 
-// Renderizado
 dv.paragraph("```html\n" +
 "<b>Desglose de tareas</b>\n" +
 "<pre>\n" +
@@ -219,7 +157,7 @@ filasHTML +
 ```
 ---
 ## 2. Desarrollo de la solución
-`button-add-detail`
+`BUTTON[btn-add-detail]`
 ```dataview
 LIST WITHOUT ID
 	link(file.link, upper(detail))
@@ -233,44 +171,30 @@ WHERE origin = this.file.link
 
 ### 📊 Resumen de Horas
 ```dataviewjs
-const getTags = (p) => {
-    if (!p.tags) return [];
-    if (Array.isArray(p.tags)) return p.tags;
-    if (p.tags.values) return p.tags.values;
-    return [];
-};
-const toMins = (s) => {
-    if (!s) return 0;
-    const parts = s.toString().replace("hs","").trim().split(":");
-    return parts.length < 2 ? 0 : (parseInt(parts[0]) * 60) + parseInt(parts[1]);
-};
-const toStr = (m) => `${Math.floor(m/60).toString().padStart(2,"0")}:${(m%60).toString().padStart(2,"0")}`;
+await dv.view("80_Templates/Scripts/planificar_tareas_helper", {});
+const H = window._ptHelpers;
 
 const curr = dv.current();
 const filePath = curr.file.path;
 
-// 1. Leer contenido de la nota actual
 const content = await dv.io.load(filePath);
 const limpio = content.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
 
-// 2. Leer Plan de Desarrollo — construir mapa id → nombre
 const planMatch = limpio.match(/### Plan de Desarrollo[\s\S]*?((?:\|[^\n]+\|\n?)+)/);
-const tareas = {}; // { id: { nombre, mins } }
-
+const tareas = {};
 if (planMatch) {
     let lines = planMatch[1].split("\n").map(l => l.trim()).filter(l => l.includes("|") && !l.includes("---"));
     if (lines.length > 0) lines.shift();
     for (const line of lines) {
         const partes = line.split("|");
         if (partes.length < 3) continue;
-        const id     = partes[1].trim();
+        const id = partes[1].trim();
         const nombre = partes[2].trim();
         if (!id || isNaN(parseInt(id))) continue;
         tareas[id] = { nombre, mins: 0 };
     }
 }
 
-// 3. Leer bitácora de la nota actual y sumar por ID
 const bitMatch = limpio.match(/## 3\. Bitácora de Ejecución[\s\S]*?((?:\|[^\n]+\|\n?)+)/);
 if (bitMatch) {
     let lines = bitMatch[1].split("\n").map(l => l.trim()).filter(l => l.includes("|") && !l.includes("---"));
@@ -278,57 +202,26 @@ if (bitMatch) {
     for (const line of lines) {
         const partes = line.split("|");
         if (partes.length < 6) continue;
-        const durStr  = partes[4].trim();
+        const durStr = partes[4].trim();
         const idTarea = partes[5].trim();
         if (!idTarea || isNaN(parseInt(idTarea))) continue;
-        const mins = toMins(durStr.replace(/\[duracion::\s*/, "").replace("]", ""));
+        const mins = H.toMins(durStr.replace(/\[duracion::\s*/, "").replace("]", ""));
         if (tareas[idTarea]) tareas[idTarea].mins += mins;
     }
 }
 
-// 4. Buscar subtareas donde origin = esta nota y sumar su bitácora al parent_task_id
-const subtareas = dv.pages('"20_Projects"')
-    .where(p => {
-        return getTags(p).includes("type/task/sub") && 
-               p.origin?.path === filePath;
-    });
+// Subtareas recursivas (incluye sub-subtareas, etc.)
+await H.acumularHorasSubtareas(filePath, tareas);
 
-for (const sub of subtareas) {
-    const subContent = await dv.io.load(sub.file.path);
-    const subLimpio = subContent.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
-    const parentId = sub.parent_task_id?.toString().trim();
-    if (!parentId || !tareas[parentId]) continue;
-
-    const subBitMatch = subLimpio.match(/## 3\. Bitácora de Ejecución[\s\S]*?((?:\|[^\n]+\|\n?)+)/);
-    if (!subBitMatch) continue;
-
-    let lines = subBitMatch[1].split("\n").map(l => l.trim()).filter(l => l.includes("|") && !l.includes("---"));
-    if (lines.length > 0) lines.shift();
-
-    for (const line of lines) {
-        const partes = line.split("|");
-        if (partes.length < 6) continue;
-        const durStr = partes[4].trim();
-        const mins = toMins(durStr.replace(/\[duracion::\s*/, "").replace("]", ""));
-        tareas[parentId].mins += mins;
-    }
-}
-
-// 5. Renderizar tabla
 const filas = Object.entries(tareas).filter(([_, t]) => t.mins > 0);
-
-if (!filas.length) {
-    dv.span("_Sin horas cargadas._");
-    return;
-}
+if (!filas.length) { dv.span("_Sin horas cargadas._"); return; }
 
 const totalMins = filas.reduce((acc, [_, t]) => acc + t.mins, 0);
-
 dv.table(
     ["ID", "Tarea / Módulo", "Tiempo"],
     [
-        ...filas.map(([id, t]) => [id, t.nombre, `**${toStr(t.mins)}** hs`]),
-        ["", "**TOTAL**", `**${toStr(totalMins)}** hs`]
+        ...filas.map(([id, t]) => [id, t.nombre, `**${H.toStr(t.mins)}** hs`]),
+        ["", "**TOTAL**", `**${H.toStr(totalMins)}** hs`]
     ]
 );
 ```

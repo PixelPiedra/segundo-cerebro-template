@@ -1,16 +1,18 @@
 {
-  "showGettingStartedBanner": true,
-  "hasMigratedDailyNoteSettings": false,
-  "hasMigratedWeeklyNoteSettings": false,
+  "showGettingStartedBanner": false,
+  "hasMigratedDailyNoteSettings": true,
+  "hasMigratedWeeklyNoteSettings": true,
   "daily": {
-    "format": "",
-    "template": "",
-    "folder": ""
+    "format": "YYYY-MM-DD",
+    "template": "80_Templates/T_Daily_Note",
+    "folder": "30_Calendar",
+    "enabled": true
   },
   "weekly": {
-    "format": "",
-    "template": "",
-    "folder": ""
+    "format": "YYYY-[W]WW",
+    "template": "80_Templates/T_Weekly_Review",
+    "folder": "30_Calendar",
+    "enabled": true
   },
   "monthly": {
     "format": "",

@@ -36,7 +36,7 @@ if (selectedCategory === "✨ Nueva Categoría..." || !selectedCategory) {
 if (!selectedCategory) selectedCategory = "General";
 %>
 created: <% tp.date.now("YYYY-MM-DD HH:mm") %>
-status: Active
+status: Activo
 tags:  
   - type/training
 serfe_coverage_pct: 100
@@ -46,7 +46,7 @@ project: Training - <% tp.file.title.split(" - ").pop() %>
 ---
 # 🎓 Capacitación: <% tp.file.title.split(" - ").pop() %>
 > [!ABSTRACT] 🧭 Panel de Control
-> **Estado**: `INPUT[inlineSelect(option(Active), option(Completed), option(OnHold), option(Canceled)):status]` 
+> **Estado**: `INPUT[inlineSelect(option(Activo), option(Completado), option(Pausado), option(Archivado), option(Cancelado)):status]` 
 > **Tiempo Total**: `$= { const horas = dv.current().horas; let mins = 0; if(horas){ const arr = Array.isArray(horas) ? horas : [horas]; arr.forEach(h => { const p = h.toString().split(":"); if(p.length===2) mins += parseInt(p[0])*60 + parseInt(p[1]); }); } const h = Math.floor(mins/60).toString().padStart(2,'0'); const m = (mins%60).toString().padStart(2,'0'); dv.span("**" + h + ":" + m + "**"); }` hs 
 > **Cobertura Serfe**: `INPUT[number:serfe_coverage_pct]` %
 
@@ -59,7 +59,7 @@ project: Training - <% tp.file.title.split(" - ").pop() %>
 
 ---
 ## 📝 Clases
-`button-add-detail`
+`BUTTON[btn-add-detail]`
 ```dataview
 LIST WITHOUT ID
 	link(file.link, upper(detail))

@@ -146,7 +146,7 @@
       "actions": [
         {
           "type": "runTemplaterFile",
-          "templateFile": "80_Templates/Scripts/T_Add_Interuption.md"
+          "templateFile": "80_Templates/Scripts/T_Add_Interruption.md"
         }
       ]
     },
@@ -198,6 +198,40 @@
         {
           "type": "runTemplaterFile",
           "templateFile": "80_Templates/Scripts/T_Add_Link_Task.md"
+        }
+      ]
+    },
+    {
+      "label": "➕ Agregar Detalle",
+      "icon": "",
+      "style": "default",
+      "class": "",
+      "cssStyle": "",
+      "backgroundImage": "",
+      "tooltip": "",
+      "id": "btn-add-detail",
+      "hidden": false,
+      "actions": [
+        {
+          "type": "runTemplaterFile",
+          "templateFile": "80_Templates/Scripts/T_Create_Detail_Wizard.md"
+        }
+      ]
+    },
+    {
+      "label": "🛠️ Crear Sub Tarea",
+      "icon": "",
+      "style": "default",
+      "class": "",
+      "cssStyle": "",
+      "backgroundImage": "",
+      "tooltip": "",
+      "id": "btn-create-sub-task",
+      "hidden": false,
+      "actions": [
+        {
+          "type": "runTemplaterFile",
+          "templateFile": "80_Templates/Scripts/T_Create_Sub_Task_Wizard.md"
         }
       ]
     }
