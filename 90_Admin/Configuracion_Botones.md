@@ -102,7 +102,7 @@ templater true
 
 ```button
 name ⏳ Nuevo Registro
-type note(00_Inbox/<% const n=app.workspace.getActiveFile()?.basename; window._origenNota=n; tp.date.now("YYYY-MM-DD")+(n?"_"+n.replace(/^MOC_/,""):"") %>_Routine) template
+type note(00_Inbox/<% (window._origenNota=app.workspace.getActiveFile()?.basename, tp.date.now("YYYY-MM-DD")+(window._origenNota?"_"+window._origenNota.replace(/^MOC_/,""):"") ) %>_Routine) template
 action T_Create_Routine_Log
 templater true
 ```
