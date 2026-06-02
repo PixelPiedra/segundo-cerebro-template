@@ -4,7 +4,7 @@ tags:
   - type/log
 <% tp.file.include("[[script_detectar_origen]]") %>
 ---
-# ☕ Registro de Tiempos del Día
+# ☕ Registro de Tiempos<% const r=tp.file.title.replace(/^\d{4}-\d{2}-\d{2}_/,"").replace(/_Routine$/,""); if(r) { %>: <% r %><% } %>
 ## ⏱ Bitácora del Día
 | Fecha                | Inicio | Fin   | Duración           | Tipo   | Tarea Realizada |
 | :------------------- | :----- | :---- | :----------------- | :----- | :-------------- |
