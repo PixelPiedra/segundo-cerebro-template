@@ -14,7 +14,7 @@ window._ptHelpers = {
     saveSecuencia: async (path, tareaId, valor, inputEl) => {
         const file = app.vault.getAbstractFileByPath(path);
         if (!file) return;
-        let content = await app.vault.read(file);
+        let content = (await app.vault.read(file)).replace(/\r\n/g, "\n");
         const lines = content.split("\n");
         for (let i = 0; i < lines.length; i++) {
             const partes = lines[i].split("|");
@@ -32,7 +32,7 @@ window._ptHelpers = {
     saveFecha: async (path, tareaId, valor, inputEl) => {
         const file = app.vault.getAbstractFileByPath(path);
         if (!file) return;
-        let content = await app.vault.read(file);
+        let content = (await app.vault.read(file)).replace(/\r\n/g, "\n");
         const lines = content.split("\n");
         for (let i = 0; i < lines.length; i++) {
             const partes = lines[i].split("|");
@@ -57,7 +57,7 @@ window._ptHelpers = {
             });
         const resultado = [];
         for (const sub of subs) {
-            const subContent = await dv.io.load(sub.file.path);
+            const subContent = (await dv.io.load(sub.file.path)).replace(/\r\n/g, "\n");
             const subLimpio = subContent.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
             const subMatch = subLimpio.match(/### Plan de Desarrollo[\s\S]*?((?:\|[^\n]+\|\n?)+)/);
             const subTareas = [];
@@ -120,7 +120,7 @@ window._ptHelpers = {
 
         const ticketData = [];
         for (const ticket of tickets) {
-            const content = await dv.io.load(ticket.file.path);
+            const content = (await dv.io.load(ticket.file.path)).replace(/\r\n/g, "\n");
             const contentLimpio = content.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
             const match = contentLimpio.match(/### Plan de Desarrollo[\s\S]*?((?:\|[^\n]+\|\n?)+)/);
             if (!match) continue;
@@ -162,7 +162,7 @@ window._ptHelpers = {
             // en una tarea top-level diferente a la de su padre
             const targetId = inheritedParentId || (parentId && tareas[parentId] ? parentId : null);
             if (targetId && tareas[targetId]) {
-                const subContent = await dv.io.load(sub.file.path);
+                const subContent = (await dv.io.load(sub.file.path)).replace(/\r\n/g, "\n");
                 const subLimpio = subContent.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
                 const subBitMatch = subLimpio.match(/## 3\. Bitácora de Ejecución[\s\S]*?((?:\|[^\n]+\|\n?)+)/);
                 if (subBitMatch) {
@@ -256,7 +256,7 @@ window._ptHelpers = {
     async leerContenido(path) {
         if (!this._cacheContenidos.has(path)) {
             try {
-                this._cacheContenidos.set(path, await dv.io.load(path));
+                this._cacheContenidos.set(path, (await dv.io.load(path)).replace(/\r\n/g, "\n"));
             } catch (e) {
                 this._cacheContenidos.set(path, null);
             }
@@ -317,7 +317,7 @@ window._ptHelpers = {
             || dv.date("today").toFormat("yyyy-MM-dd");
         const filterOrigin = cache?.frontmatter?.origin ? H.normalizarOrigin(cache.frontmatter.origin) : null;
 
-        const logContent = await dv.io.load(logPath);
+        const logContent = (await dv.io.load(logPath)).replace(/\r\n/g, "\n");
 
         // 1. Leer bitácora del log
         const logLimpio = logContent.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
@@ -334,7 +334,7 @@ window._ptHelpers = {
                 const fin    = partes[3].trim();
                 const tipo   = partes[5].trim().toLowerCase();
                 const desc   = partes[6].trim();
-                if (!inicio.match(/^\d{2}:\d{2}$/) || !fin.match(/^\d{2}:\d{2}$/)) continue;
+                if (!inicio.match(/^\d{1,2}:\d{2}$/) || !fin.match(/^\d{1,2}:\d{2}$/)) continue;
                 const e = { inicio, fin, tipo, desc, inicioM: H.toMins(inicio), finM: H.toMins(fin) };
                 if (tipo === "rutina") rutina.push(e); else interrupciones.push(e);
             }
@@ -386,7 +386,7 @@ window._ptHelpers = {
         // Leer Plan de Desarrollo de todas las notas recolectadas
         const planificadas = [];
         for (const p of notas) {
-            const content = await dv.io.load(p.file.path);
+            const content = (await dv.io.load(p.file.path)).replace(/\r\n/g, "\n");
             const limpio = content.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
             const match = limpio.match(/### Plan de Desarrollo[\s\S]*?((?:\|[^\n]+\|\n?)+)/);
             if (!match) continue;
@@ -443,7 +443,7 @@ window._ptHelpers = {
         // 5. Leer bitácoras reales de las mismas notas
         const bloquesReales = [];
         for (const nota of notas) {
-            const content = await dv.io.load(nota.file.path);
+            const content = (await dv.io.load(nota.file.path)).replace(/\r\n/g, "\n");
             const limpio = content.replace(/```[\s\S]*?```/g, "").replace(/`[^`]*`/g, "");
             const bitMatch = limpio.match(/## 3\. Bitácora de Ejecución[\s\S]*?((?:\|[^\n]+\|\n?)+)/);
             if (!bitMatch) continue;
@@ -455,7 +455,7 @@ window._ptHelpers = {
                 const fechaCol = partes[1].trim(), inicio = partes[2].trim(), fin = partes[3].trim(), desc = partes[6].trim();
                 const fechaMatch = fechaCol.match(/\[\s*fecha::\s*([\d-]+)\s*\]/);
                 if (!fechaMatch || fechaMatch[1] !== today) continue;
-                if (!inicio.match(/^\d{2}:\d{2}$/) || !fin.match(/^\d{2}:\d{2}$/)) continue;
+                if (!inicio.match(/^\d{1,2}:\d{2}$/) || !fin.match(/^\d{1,2}:\d{2}$/)) continue;
                 bloquesReales.push({ nombre: `${nota.file.name.split(" - ").pop()} · ${desc}`.replace(/:/g," ").substring(0,40), inicio, fin, inicioM: H.toMins(inicio), finM: H.toMins(fin) });
             }
         }
